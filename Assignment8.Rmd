@@ -1,0 +1,142 @@
+---
+title: "Assignment8"
+author: "Cameron Forsyth"
+date: "2023-03-08"
+output: html_document
+---
+
+[Github Link](https://github.com/CamForsyth/Assignment8)
+
+#Loading libraries
+```{r}
+library(dplyr)
+library(tidyverse)
+library(ggplot2)
+library(ape)
+library(vegan)
+```
+
+# Loading data and inspecting it
+
+```{r}
+rawDat<-read.csv("/Users/Cameron/Documents/Queens/4th Year/Sem2/BIOL432/Week8/Assignment_8/FloristicSurvey.csv")
+head(rawDat)
+dim(rawDat)
+
+str(rawDat)
+```
+
+
+# Cleaning data
+
+# 1. Removing rows with missing data and the unknown columns
+
+```{r}
+FlowDat<- rawDat %>%
+  na.omit()
+
+```
+
+
+
+# To assess: What effect if any does garlic mustard have on the plant community? We can compare the species richness in the areas where garlic mustard is present versus absent. This is denoted in the data under the location column by "i" for inside and "o" for outside
+
+
+Subsetting the data based on if it was grown within a garlic patch versus outside a garlic patch. From this we can sum the columns that represent the amount of flowers present in the different locations. From this we can infer the effect that garlic mustard has on the plant community.
+
+```{r}
+
+inside_garlic <- subset(FlowDat, subset = Location == "i")
+outside_garlic <- subset(FlowDat, subset = Location == "o")
+  
+
+inside_Sp_rich<- sum(inside_garlic[,11:44])
+inside_Sp_rich
+
+outside_Sp_rich<- sum(outside_garlic[,11:44])
+outside_Sp_rich
+
+paste(inside_Sp_rich,"is the number of flowers present inside the garlic patches.")
+paste(outside_Sp_rich,"is the number of flowers present outside the garlic patches")
+
+print("As can be deduced from the species diversity, garlic mustard has a negative effect on species diversity of the plant community. Fewer flowers were present within the garlic mustard patches than outside.")
+
+```
+
+
+# We can first take look at the difference in the number of Claytonia individuals based on Location. We can also graphically represent the total number of species present based on if they are grown inside or outside a garlic patch.
+
+```{r}
+
+ggplot(FlowDat, aes(x = Location, y = Claytonia_virginiana, fill = Location)) +
+  geom_boxplot() +
+  ylab("Number of Claytonia_virginiana individuals")
+
+barplot(graphdat, names.arg=c("Outside Garlic Patch", "Inside Garlic Patch"), ylab= "Total number of Species present", xlab="Location", ylim=c(0,2000))
+
+```
+
+
+
+Question 2: What has a stronger effect on plant communities: the presence/absence of garlic mustard (in/out) or sampling population?
+
+To do this we could 
+
+```{r}
+
+FlowDat$TotalPlants <- rowSums(FlowDat[, 11:44])
+
+model <- lm(TotalPlants ~ Location + Population, data = FlowDat)
+summary(model)
+
+```
+# From the output model we can see: 
+The coefficient for Location is 19.000, but this is not significant (p-value = 0.4734), indicating that the presence or absence of garlic mustard did not have a significant effect on the total number of plants. The coefficient for Population is 4.644, and while it is not significant at the 5% level (p-value = 0.0755), it is closer to being significant than location. Henceforth we may conclude that samping population has a greater effect on plant community than the presence and absence of garlic patches. 
+
+Graphical Representation:
+
+```{r}
+# Create boxplot of TotalPlants by Population and Location
+
+ggplot(FlowDat, aes(x = Population, y = TotalPlants, fill = Location)) +
+  geom_boxplot() +
+  labs(x = "Population", y = "TotalPlants") +
+  theme_classic()
+```
+# Created a boxplot with Population on the x-axis, TotalPlants on the y-axis, and different levels of Location represented by different fill colors. One can see the distribution of TotalPlants varies across different levels of Population and Location.
+
+To further highlight the effect of Population compared to Location, I added a summary statistic such as the median to the plot. 
+
+```{r}
+# Calculate median TotalPlants for each level of Population
+med_by_pop <- FlowDat %>% 
+  group_by(Population) %>% 
+  summarize(median_total_plants = median(TotalPlants))
+
+# Create boxplot of TotalPlants by Population and Location with median line
+ggplot(FlowDat, aes(x = Population, y = TotalPlants, fill = Location)) +
+  geom_boxplot() +
+  geom_hline(data = med_by_pop, aes(yintercept = median_total_plants), 
+             color = "red", linetype = "dashed") +
+  labs(x = "Population", y = "TotalPlants") +
+  theme_classic()
+
+```
+
+# A dashed red line is displayed at the median TotalPlants for each level of Population. You can see that the median TotalPlants is generally higher for the "p" level of Population compared to the "q" level, regardless of Location.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
